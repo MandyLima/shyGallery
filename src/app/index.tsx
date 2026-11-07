@@ -1,98 +1,66 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { FlatList, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { ArtworkCard } from '../components/ArtworkCard';
+import { PrimaryButton } from '../components/PrimaryButton';
+import { useArtworks } from '../context/ArtworkContext';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+// Tela inicial: apresenta o portfólio em uma grade de cartões.
+export default function GalleryScreen() {
+  const { artworks } = useArtworks();
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+    <SafeAreaView style={styles.screen}>
+      <View style={styles.header}>
+        <Text style={styles.eyebrow}>PORTFÓLIO AUTORAL</Text>
+        <Text style={styles.heading}>ShyGallery</Text>
+        <Text style={styles.subtitle}>Cada desenho guarda um pouco da minha essência.</Text>
+        <View style={styles.headerBottom}>
+          <Text style={styles.counter}>{artworks.length} {artworks.length === 1 ? 'obra' : 'obras'}</Text>
+          <View style={styles.buttonWrap}>
+            <PrimaryButton title="+ Nova obra" onPress={() => router.push('/new')} />
+          </View>
+        </View>
+      </View>
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+      {/* FlatList renderiza a coleção com rolagem eficiente e duas colunas. */}
+      <FlatList
+        data={artworks}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        columnWrapperStyle={styles.columns}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <ArtworkCard
+            artwork={item}
+            // O id é enviado na URL para a rota dinâmica de detalhes.
+            onPress={() => router.push({ pathname: '/artwork/[id]', params: { id: item.id } })}
           />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+        )}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Text style={styles.emptyTitle}>Sua galeria está esperando por você.</Text>
+            <Text style={styles.emptyText}>Cadastre seu primeiro desenho e comece a montar seu portfólio.</Text>
+            <PrimaryButton title="Cadastrar primeiro desenho" onPress={() => router.push('/new')} />
+          </View>
+        }
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
+  screen: { flex: 1, backgroundColor: '#F7F3EE' },
+  header: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 18 },
+  eyebrow: { color: '#9B7B62', fontSize: 10, fontWeight: '800', letterSpacing: 2.2 },
+  heading: { color: '#342D28', fontSize: 36, fontWeight: '800', marginTop: 7 },
+  subtitle: { color: '#7B7068', fontSize: 14, marginTop: 5 },
+  headerBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 22 },
+  counter: { color: '#6D5748', fontSize: 14, fontWeight: '700' },
+  buttonWrap: { width: 142 },
+  listContent: { paddingHorizontal: 20, paddingBottom: 28, flexGrow: 1 },
+  columns: { justifyContent: 'space-between' },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 50, gap: 14 },
+  emptyTitle: { color: '#342D28', fontSize: 20, fontWeight: '700', textAlign: 'center' },
+  emptyText: { color: '#7B7068', fontSize: 14, lineHeight: 21, textAlign: 'center', marginBottom: 8 },
 });
